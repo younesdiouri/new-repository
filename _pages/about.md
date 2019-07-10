@@ -3,6 +3,18 @@ permalink: /about/
 title: "About"
 ---
 
-Tempor velit sint sunt ipsum tempor enim ad qui ullamco. Est dolore anim ad velit duis dolore minim sunt aliquip amet commodo labore. Ut eu pariatur aute ea aute excepteur laborum. Esse ea esse excepteur minim mollit qui cillum excepteur ex dolore magna. Labore deserunt fugiat incididunt incididunt sint ea. Consequat dolore aute laboris quis proident quis non et est consectetur ex eiusmod sit culpa.
+> Lateat scintillia forsan
 
-Cupidatat ea do et in excepteur in. Ad nostrud ut est esse eu duis ea sunt eiusmod. Aliquip tempor veniam sint elit fugiat. Velit incididunt laboris amet incididunt labore dolore irure velit excepteur commodo deserunt laborum. Consectetur eu fugiat veniam veniam Lorem labore magna eiusmod. Ea occaecat reprehenderit pariatur consectetur minim labore ut aliquip.
+*perchance a little spark still lies hidden*
+
+### Who are you?
+
+I've been into coding since my younger age. I thrive for fashionable frameworks, clean documentations (Yes I do!),  and partake in OS projects (Angular Firebase, Api Platform), Hackatons, coding challenges like codewars. I look forward to be part of a project where I can learn and where developers can express themselves at their best! 
+
+### Recent activities :
+
+<figure><embed src="https://wakatime.com/share/@ec221d53-ae1e-48aa-8965-fd19d450f68b/a1ce4189-db17-4e20-a174-434962db58cf.svg"></embed></figure>
+
+### Contact me
+
+[younesdiouri@gmail.com](mailto:younesdiouri@gmail.com)
