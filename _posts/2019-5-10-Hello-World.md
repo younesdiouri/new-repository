@@ -10,7 +10,7 @@ tags:
 
 Very easy to create your own blog using Jekyll Now. Fork the project from github, and follow the readme. It takes <5 min to get a nice working blog, without a local configuration.
 
-![_config.yml]({{ site.baseurl }}/images/config.png)
+![_config.yml]({{ site.baseurl }}/assets/images/config.png)
 
 
 
