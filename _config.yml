@@ -16,7 +16,7 @@
 title: Younes Diouri
 email: younesdiouri@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Full stack & devops
+  Full stack engineering & devops
 twitter_username: Arg_404
 github_username: younesdiouri
 minimal_mistakes_skin: air
@@ -59,7 +59,7 @@ plugins:
 author:
   name   : "Younes Diouri"
   avatar : "https://avatars2.githubusercontent.com/u/22621743?s=460&v=4"
-  bio    : "Full stack engeneering & devops"
+  bio    : "Full stack engineering & devops"
   links:
     - label: "Website"
       icon: "fas fa-fw fa-link"
