@@ -186,6 +186,8 @@ Remember the passphrase you used because you'll need it ;).
 
 To have proper dev and prod working environnement, I created a `lexik_jwt_authentication.yaml` file in **config/packages/dev** and **config/packages/prod** . 
 
+![jwt file structure]({{ site.baseurl }}/assets/images/capture.png)
+
 ```yaml
 # config/packages/dev/lexik_jwt_authentication.yaml
 lexik_jwt_authentication:
