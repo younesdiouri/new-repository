@@ -163,6 +163,40 @@ Easy stuff isn't it?
 ## The JWT authentication :
 
 
+Before rushing deeply into the JWT implementation let's create a User entity and persist it. 
+
+    php bin/console make:user
+    
+Don't forget to d:s:u and now we have our User entity.
+
+[JWT](https://jwt.io/) - Json Web Token - allows you to secure data between two parties. This is exactly what we need for our API.
+For Symfony we have an amazing bundle made by [Lexik](https://github.com/lexik/LexikJWTAuthenticationBundle) very easy to deploy and well documented.
+
+First we'll add the dependency : 
+
+    composer require "lexik/jwt-authentication-bundle"
+    
+Then generate the SSH keys :
+
+    mkdir config/jwt
+    openssl genrsa -out config/jwt/private.pem -aes256 4096
+    openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem
+    
+Remember the passphrase you used because you'll need it ;). 
+
+To have proper dev and prod working environnement, I created a `lexik_jwt_authentication.yaml` file in **config/packages/dev** and **config/packages/prod** . 
+
+```yaml
+# config/packages/dev/lexik_jwt_authentication.yaml
+lexik_jwt_authentication:
+    secret_key: '%env(resolve:JWT_SECRET_KEY)%'
+    public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
+    pass_phrase: '%env(JWT_PASSPHRASE)%'
+    user_identity_field: username
+```
+
+
+
 
 
 
