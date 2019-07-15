@@ -61,6 +61,15 @@ plugins:
   - jekyll-include-cache
   - jekyll-seo-tag
 
+
+# Analytics
+analytics:
+  provider               : "google"
+  google:
+    tracking_id          : "UA-143874041-1"
+    anonymize_ip         : # true, false (default)
+    
+    
 author:
   name   : "Younes Diouri"
   avatar : "https://avatars2.githubusercontent.com/u/22621743?s=460&v=4"
