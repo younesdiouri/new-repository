@@ -208,7 +208,7 @@ lexik_jwt_authentication:
 ```
 
 I used Heroku for production. You can easily have a CD with Heroku by hook with your master branch or a dedicated one. Don't forget to define the JWT environnement variables : `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE`.
-{: .notice-info}
+{: .notice--info}
 
 
 
