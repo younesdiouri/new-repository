@@ -187,7 +187,7 @@ Remember the passphrase you used because you'll need it ;).
 
 To have proper dev and prod working environnement, I created a `lexik_jwt_authentication.yaml` file in **config/packages/dev** and **config/packages/prod**.
 
-{% raw %}<img src="{{ site.url }}{{ site.baseurl }}/assets/images/Capture.PNG" alt="jwt file structure">{% endraw %}
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/Capture.PNG" alt="jwt file structure">{% endraw %}
 
 ```yaml
 # config/packages/dev/lexik_jwt_authentication.yaml
