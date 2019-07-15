@@ -22,6 +22,11 @@ github_username: younesdiouri
 minimal_mistakes_skin: air
 search: true
 
+comments:
+  provider               : "disqus"
+  disqus:
+    shortname            : "younesdiouri"
+    
 # Build settings
 markdown: kramdown
 remote_theme: mmistakes/minimal-mistakes
