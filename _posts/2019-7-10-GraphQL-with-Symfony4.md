@@ -171,6 +171,7 @@ Don't forget to d:s:u and now we have our User entity.
 
 [JWT](https://jwt.io/) - Json Web Token - allows you to secure data between two parties. This is exactly what we need for our API.
 For Symfony we have an amazing bundle made by [Lexik](https://github.com/lexik/LexikJWTAuthenticationBundle) very easy to deploy and well documented.
+{: .notice}
 
 First we'll add the dependency : 
 
@@ -186,7 +187,7 @@ Remember the passphrase you used because you'll need it ;).
 
 To have proper dev and prod working environnement, I created a `lexik_jwt_authentication.yaml` file in **config/packages/dev** and **config/packages/prod** . 
 
-![jwt file structure]({{ site.baseurl }}/assets/images/capture.png)
+[jwt file structure]({{ site.baseurl }}/assets/images/Capture.PNG)
 
 ```yaml
 # config/packages/dev/lexik_jwt_authentication.yaml
