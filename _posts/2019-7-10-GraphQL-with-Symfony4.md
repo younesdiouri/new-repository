@@ -187,7 +187,7 @@ Remember the passphrase you used because you'll need it ;).
 
 To have proper dev and prod working environnement, I created a `lexik_jwt_authentication.yaml` file in **config/packages/dev** and **config/packages/prod**.
 
-{% raw %}<img src="{{ site.baseurl }}/assets/images/Capture.PNG" alt="jwt file structure">{% endraw %}
+{% raw %}<img src="{{ site.url }}{{ site.baseurl }}/assets/images/Capture.PNG" alt="jwt file structure">{% endraw %}
 
 ```yaml
 # config/packages/dev/lexik_jwt_authentication.yaml
@@ -207,7 +207,7 @@ lexik_jwt_authentication:
     user_identity_field: username
 ```
 
-I used Heroku for production. You can easily have a CD with Heroku by hook with your master branch or a dedicated one. Don't forget to define the JWT environnement variables : `JWT_SECRET_KEY, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE`.
+I used Heroku for production. You can easily have a CD with Heroku by hook with your master branch or a dedicated one. Don't forget to define the JWT environnement variables : `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE`.
 
 
 
