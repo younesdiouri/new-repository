@@ -48,7 +48,12 @@ I am not fan of showing only the graphQL behavior with Symfony. If you know what
 ## Devops :
 
 Lets starts with the environnement. Should we use Docker? Wamp? Lamp? Xamp? Samp? Namp? Tamp?
-Docker looks good. With Docker-compose, you can use the following docker-compose.yml :
+I will show you two different ways of deployment (one with Docker, one without).
+
+### With Docker and Docker-compose :
+
+You'll obviously need Docker and Docker-compose on your local env. 
+Here lays an example of docker-compose.yml :
 
 ```yaml
 
@@ -112,13 +117,23 @@ Explanation :
 The adminer part is optional as you can access your admin DB with HeidiSQL or some eq.
 As for Symfony, I used a built version of apache2 php (from a friend of mine), but you can easy build something equivalent. 
 
-Now for another way of deploying your Symfony app you'll need to have PHP >=^7.1, PGSQL (> 9.x) and composer.
+Now you can run `docker-compose up` and use your composer container to generate a symfony 4 project : 
 
-    composer create-project symfony/website-skeleton my-api
+    docker-compose exec composer create-project symfony/website-skeleton my-api
     
 The website skeleton will pull all the depedencies for a complete website (eg: twig, doctrine, etc). You can clean what you don't want in your API in your composer.json of course.
 
-Now in SF4 there should be a .env, .env.dist, .env.local. We will use for our local development .... TADA! .env.local. 
+### Without Docker :
+
+Now for another way of deploying your Symfony app you'll need to have PHP >=^7.1, PGSQL (> 9.x) and composer. It's very easy to install (even on Windows) and thanks to composer you can run:
+
+    composer create-project symfony/website-skeleton my-api
+
+### Common configurations for .env.local & postgres: 
+
+We will need to perform a few changes before creating our entities etc.
+
+In your SF4 project directory there should be a .env, .env.dist, .env.local. What will we use for our local development ? .env.local. 
 
 ```
 #.env.local
@@ -157,13 +172,15 @@ doctrine:
     url: '%env(resolve:DATABASE_URL)%'
 ```
 
-You can start your symfony app with `php bin/console server:run`. 
+For the non-docker env users : 
+You can now start your symfony app with `php bin/console server:run` !
+No need for Apache, Active Directory, and all the pain with the php.ini.
 Easy stuff isn't it?
 
 ## The JWT authentication :
 
-
-Before rushing deeply into the JWT implementation let's create a User entity and persist it. 
+Enough with the settings ladies & gentlemen. Let's secure our future graphQL API.
+But before rushing deeply into the JWT implementation let's create a User entity and persist it. The maker bundle is mandatory for this command. 
 
     php bin/console make:user
     
