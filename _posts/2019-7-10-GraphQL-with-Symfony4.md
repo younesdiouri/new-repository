@@ -228,6 +228,61 @@ I used Heroku for production. You can easily have a CD with Heroku by hook with 
 {: .notice--info}
 
 
+Now, let's add some firewalls (registration, login and API) :
+
+```yaml
+# config/packages/security.yaml
+security:
+    encoders:
+       App\Entity\User:
+            algorithm: argon2i
+
+    # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
+    providers:
+        # used to reload user from session & other features (e.g. switch_user)
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        login:
+            pattern:  ^/login
+            stateless: true
+            anonymous: true
+            json_login:
+                check_path: /login
+                username_path: username
+                success_handler:          lexik_jwt_authentication.handler.authentication_success
+                failure_handler:          lexik_jwt_authentication.handler.authentication_failure
+        api:
+            pattern:   ^/graphql/
+            stateless: true
+            anonymous: false
+            provider: app_user_provider
+            guard:
+                authenticators:
+                    - lexik_jwt_authentication.jwt_token_authenticator
+
+        register:
+            pattern:  ^/register
+            stateless: true
+            anonymous: true
+            
+    access_control:
+        - { path: ^/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/register, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+```
+
+The **register** firewall allows an anonymous access. 
+
+The **login** firewall works the same way than the register but it will go through our JWT bundle handler. 
+
+The **api** firewall is basically the graphql route : we need our user to be fully authenticated (we can also add it in the access_control area) and to secure it, we have the guard authenticator "JWT token authenticator".
+
+This is not graphQL yet ! Indeed the register and login are regular Symfony routes. We can use graphQL with REST in the same project, depending on your needs. 
+
 
 
 
