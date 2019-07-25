@@ -283,6 +283,82 @@ The **api** firewall is basically the graphql route : we need our user to be ful
 
 This is not graphQL yet ! Indeed the register and login are regular Symfony routes. We can use graphQL with REST in the same project, depending on your needs. 
 
+Now we append the routes :
 
+```yaml
+# config/routes.yaml
+
+login:
+  path:     /login
+  methods:  [POST]
+
+register:
+  path: /register
+  controller: App\Controller\ApiController::register
+  methods: POST
+  ```
+  
+  As you can see, the Lexik JWT Bundle is handling by itself the login method (no need to add it in the controller). For the registration, we will do it by ourselves :
+  
+  ```php
+  //Controller/ApiController
+  
+ public function register(
+        Request $request,
+        UserPasswordEncoderInterface $encoder,
+        JWTTokenManagerInterface $JWTManager,
+        ValidatorInterface $validator,
+        \Swift_Mailer $mailer
+    ) {
+
+        $em = $this->getDoctrine()->getManager();
+
+        $data = json_decode($request->getContent());
+
+        $user = $em->getRepository(User::class)->findOneBy(['username' => $data->username]);
+
+        if($user || $em->getRepository(User::class)->findOneBy(['email' => $data->email]) ) {
+            $response = new JsonResponse(["error" => 'Account already exist']);
+            return $response->setStatusCode(409);
+        }
+
+        $user = new User();
+
+        $user->setUsername($data->username);
+        $user->setPassword($encoder->encodePassword($user, $data->password));
+        $user->setEmail($data->email);
+
+        $errors = $validator->validate($user);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            $response = new Response($errorsString);
+            $response->setStatusCode(400);
+            return $response ;
+        }
+
+        $em->persist($user);
+        $em->flush();
+
+        $message = (new \Swift_Message('Welcome to Backer'))
+            ->setFrom('no-reply@backer.com')
+            ->setTo($user->getEmail())
+            ->setBody(
+                $this->renderView(
+                    'api/registration.html.twig',
+                    ['name' => $user->getUsername()]
+                ),
+                'text/html'
+            )
+        ;
+
+        $mailer->send($message);
+
+        return new JsonResponse(['token' => $JWTManager->create($user)]);
+    }
+```
+
+Nothing weird in this Register method : we have the `$data = json_decode($request->getContent());` which get the Json data from the front-end machine, 
+ 
 
 
