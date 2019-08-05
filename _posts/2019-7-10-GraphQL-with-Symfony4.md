@@ -4,6 +4,7 @@ date: 2019-07-10T15:24:30-04:00
 categories:
   - php
   - graphql
+  - jwt
 tags:
   - sf4
   - symfony
@@ -41,11 +42,11 @@ I used it for one big project of mine, and I must say **THANK YOU GUYS** for pro
 
 Humhum, let's not heat the oven up, and put ourselves to work step by step. 
 
-# Completely secured & working API with Symfony - JWT - GraphQL 
+# I) Completely secured & working API with Symfony - JWT - GraphQL 
 
 I am not fan of showing only the graphQL behavior with Symfony. If you know what are the concepts of an API (JWT, login, registration etc) you can jump like a beatiful kangouroo to the GraphQL implementation. 
 
-## Devops :
+## 1) Devops :
 
 Lets starts with the environnement. Should we use Docker? Wamp? Lamp? Xamp? Samp? Namp? Tamp?
 I will show you two different ways of deployment (one with Docker, one without).
@@ -177,7 +178,7 @@ You can now start your symfony app with `php bin/console server:run` !
 No need for Apache, Active Directory, and all the pain with the php.ini.
 Easy stuff isn't it?
 
-## The JWT authentication :
+## 2) The JWT authentication :
 
 Enough with the settings ladies & gentlemen. Let's secure our future graphQL API.
 But before rushing deeply into the JWT implementation let's create a User entity and persist it. The maker bundle is mandatory for this command. 
@@ -187,7 +188,7 @@ But before rushing deeply into the JWT implementation let's create a User entity
 Don't forget to d:s:u and now we have our User entity.
 
 
-### The JWT token : Login and Registration
+### The JWT token : Login and Registration :
 
 [JWT](https://jwt.io/) - Json Web Token - allows you to secure data between two parties. This is exactly what we need for our API.
 For Symfony we have an amazing bundle made by [Lexik](https://github.com/lexik/LexikJWTAuthenticationBundle) very easy to deploy and well documented.
@@ -372,7 +373,7 @@ Wait? That's it?
 
 Yup. We are set for our registration / login part. But what data could we send in this Token? Our client will decode the token and use it for example to display some data or query posts. 
 
-### The JWT token : An Event Listener example
+### The JWT token : An Event Listener example :
 
 Let's assume we need the picture URL and the user ID.
 We need to add these sets of key=>value into the JWT token.
@@ -437,6 +438,28 @@ We need to minimize going back and forth between our server and our database. A 
 In this case, we are getting the user from the server cache, and not querying the DB (with the $em). 
 
 Finally, we append the `$user->getId()` and `$user->getPicTureUrl()` to the payload.
+
+### The JWT token : How to simulate a client :
+
+You can use curl from a bash or a far more better UI with [Postman](https://www.getpostman.com/downloads/). 
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/postman.PNG" alt="postman example">{% endraw %}
+
+Easily I can register by sending this POST request with a specific header : Content-Type = application/json. I will receive a token in response with all the data I need. 
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/token.PNG" alt="jwt with postman">{% endraw %}
+
+You can access some protected routes by using this token. Let's assume that our endpoint `/api/private` is protected (in the security.yaml), 
+we can reach this route with postman by filling the **Authorization** header : 
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/token-authorization.PNG" alt="jwt with postman">{% endraw %}
+
+You can notice the **Bearer** word before the token. It is mandatory to put `Bearer + Space + Token` for the Authorization key.
+{: .notice--info}
+
+We'll see (maybe :)) in another topic how to use this JWT token with React (and also with react-apollo for GraphQl).
+
+
 
 
 
