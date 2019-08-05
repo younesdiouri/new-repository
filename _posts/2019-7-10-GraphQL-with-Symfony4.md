@@ -377,7 +377,7 @@ Yup. We are set for our registration / login part. But what data could we send i
 Let's assume we need the picture URL and the user ID.
 We need to add these sets of key=>value into the JWT token.
 
-Thanks to Lexik, we can use the EventListner **JWTCreatedListener** .
+> Thanks to Lexik, we can use the EventListner **JWTCreatedListener** .
 
 ```php
 <?php
@@ -431,11 +431,12 @@ class JWTCreatedListener
 This listener will listen (as expected) to the JWT created event. The $payload is the data stored by the JWT Token. 
 The most important code block is `$user = $event->getUser()`. Why?
 
-We need to minimize going back and forth between our server and our database. A good API should give a quick response to the client, thus using wisely the cache etc. 
+We need to minimize going back and forth between our server and our database. A good API should give a quick response to the client, thus using wisely the cache etc.
+{: .notice--warning}
 
 In this case, we are getting the user from the server cache, and not querying the DB (with the $em). 
 
-Then, we append the `$user->getId()` and `$user->getPicTureUrl()` to the payload.
+Finally, we append the `$user->getId()` and `$user->getPicTureUrl()` to the payload.
 
 
 
