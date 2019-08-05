@@ -186,6 +186,9 @@ But before rushing deeply into the JWT implementation let's create a User entity
     
 Don't forget to d:s:u and now we have our User entity.
 
+
+### The JWT token : Login and Registration
+
 [JWT](https://jwt.io/) - Json Web Token - allows you to secure data between two parties. This is exactly what we need for our API.
 For Symfony we have an amazing bundle made by [Lexik](https://github.com/lexik/LexikJWTAuthenticationBundle) very easy to deploy and well documented.
 {: .notice}
@@ -340,8 +343,8 @@ register:
         $em->persist($user);
         $em->flush();
 
-        $message = (new \Swift_Message('Welcome to Backer'))
-            ->setFrom('no-reply@backer.com')
+        $message = (new \Swift_Message('Welcome to the website'))
+            ->setFrom('no-reply@website.com')
             ->setTo($user->getEmail())
             ->setBody(
                 $this->renderView(
@@ -358,7 +361,82 @@ register:
     }
 ```
 
-Nothing weird in this Register method : we have the `$data = json_decode($request->getContent());` which get the Json data from the front-end machine, 
- 
+Nothing weird in this Register method : we have the `$data = json_decode($request->getContent());` which get the Json data from the front-end machine, and if you want to work with php arrays you can use the `->toArray()` method. 
+We check then if the email already exists (we can add some **password** strenght validators), then we persist and flush. 
+
+I've added an emailing registration example, which can be easily implemented into your app and improves the UX / Security. 
+
+Last but not least, we return a new JsonResponse with the Json Web Token freshly created, thanks to the `$JWTManager->create($user)`. 
+
+Wait? That's it? 
+
+Yup. We are set for our registration / login part. But what data could we send in this Token? Our client will decode the token and use it for example to display some data or query posts. 
+
+### The JWT token : An Event Listener example
+
+Let's assume we need the picture URL and the user ID.
+We need to add these sets of key=>value into the JWT token.
+
+Thanks to Lexik, we can use the EventListner **JWTCreatedListener** .
+
+```php
+<?php
+//src/EventListener
+/**
+ * Created by PhpStorm.
+ * User: younesdiouri
+ * Date: 01/03/2019
+ * Time: 18:04
+ */
+namespace App\EventListener;
+use App\Entity\User;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\User\UserInterface;
+
+class JWTCreatedListener
+{
+    /**
+     * @var RequestStack
+     */
+    private $requestStack;
+
+    /**
+     * @param RequestStack $requestStack
+     */
+    public function __construct(RequestStack $requestStack)
+    {
+        $this->requestStack = $requestStack;
+    }
+
+    public function onJWTCreated(JWTCreatedEvent $event)
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        $payload = $event->getData();
+        /** @var User $user */
+        $user = $event->getUser();
+
+        if (!$user instanceof UserInterface) {
+            throw new \Exception('Does not match user interface', 500);
+        }
+
+        $payload['id'] = $user->getId()->toString();
+        $payload['pictureUrl'] = $user->getPictureUrl();
+        $event->setData($payload);
+    }
+}
+
+```
+
+This listener will listen (as expected) to the JWT created event. The $payload is the data stored by the JWT Token. 
+The most important code block is `$user = $event->getUser()`. Why?
+
+We need to minimize going back and forth between our server and our database. A good API should give a quick response to the client, thus using wisely the cache etc. 
+
+In this case, we are getting the user from the server cache, and not querying the DB (with the $em). 
+
+Then, we append the `$user->getId()` and `$user->getPicTureUrl()` to the payload.
+
+
 
 
