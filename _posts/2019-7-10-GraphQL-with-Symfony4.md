@@ -42,7 +42,7 @@ I used it for one big project of mine, and I must say **THANK YOU GUYS** for pro
 
 Humhum, let's not heat the oven up, and put ourselves to work step by step. 
 
-# I) Completely secured & working API with Symfony - JWT - GraphQL 
+# Completely secured & working API with Symfony - JWT - GraphQL 
 
 I am not fan of showing only the graphQL behavior with Symfony. If you know what are the concepts of an API (JWT, login, registration etc) you can jump like a beatiful kangouroo to the GraphQL implementation. 
 
@@ -459,8 +459,132 @@ You can notice the **Bearer** word before the token. It is mandatory to put `Bea
 
 We'll see (maybe :)) in another topic how to use this JWT token with React (and also with react-apollo for GraphQl).
 
+## 2) GraphQL implementation:
+
+Alright folks, we finally reached our main topic. We'll see here the main components of [Overblog/GraphQL](https://github.com/overblog/GraphQLBundle) : 
+- How to create a graphQL scheme with multiple types
+- Resolvers
+- Mutations
+
+### Overblog : Define your graphQL schema and test it with graphiQL
+
+First of all we'll need to install the bundle via composer : 
+
+    composer require overblog/graphql-bundle
+
+You'll notice a new file in your `config/packages/` directory named graphql.yaml. 
+
+```yaml
+overblog_graphql:
+    definitions:
+        schema:
+            query: Query
+            mutation: Mutation
+        mappings:
+            auto_discover: false
+            types:
+                -
+                    type: yaml
+                    dir: "%kernel.project_dir%/config/graphql/types"
+                    suffix: ~
+```
+
+**Quick explanation:** We'll use for graphQL queries a Query.types.yaml file and for mutation Mutation.yaml. You can use either yaml or graphql extension format. 
+{: .notice--info}
+
+Before defining our types, we'll assume that our User has some Posts (content, author, publishedAt) and our posts some Hashtags to cover all scenarios. 
+
+First, create a Post entity with `php bin/console make:entity` and add a Many To One association between posts and user.
+Do the same for a Hashtag entity and we'll add a Many To Many association between hashtags and posts.
+
+Let's get it back on track. Here is the User / Post / Hashtag type examples :
+
+```yaml
+#config/graphql/types/User.types.yaml
+User:
+  type: object
+  config:
+    resolveField: '@=resolver("App\\GraphQL\\Resolver\\UserResolver", [info, value, args])'
+    fields:
+      email:
+        description: "Email of the user"
+        type: String
+      username:
+        description: "Username of the user"
+        type: String
+      pictureUrl:
+        description: "Picture URL of the user"
+        type: String
+      posts:
+        description: "Post collection of the user"
+        type: PostConnection
+        argsBuilder: Relay::ForwardConnection
+
+```
+
+```yaml
+#config/graphql/types/PostConnection.types.yaml
+PostConnection:
+  type: relay-connection
+  config:
+    nodeType: Post!
+```
+
+```yaml
+#config/graphql/types/Post.types.yaml
+Post:
+  type: object
+  config:
+    resolveField: '@=resolver("App\\GraphQL\\Resolver\\PostResolver", [info, value, args])'
+    fields:
+      postId:
+        description: "Id of the post"
+        type: String
+      content:
+        description: "Content of the post"
+        type: String
+      publishedAt:
+        description: "Publication date of the post"
+        type: String
+      author:
+        description: "User author of the post"
+        type: User
+      hashtags:
+        description: "Hashtags of this post"
+        type: "[Hashtag]"
+
+```
+
+```yaml
+#config/graphql/types/Hashtag.types.yaml
+Hashtag:
+  type: object
+  config:
+    resolveField: '@=resolver("App\\GraphQL\\Resolver\\HashtagResolver", [info, value, args])'
+    fields:
+      name:
+        description: "Hashtag value"
+        type: String
+      count:
+        description: "Number of posts for the hashtag"
+        type: Int
+      posts:
+        description: "Posts related to the hashtag"
+        type: HashtagPostConnection
+        argsBuilder: Relay::ForwardConnection
+```
+
+```yaml
+#config/graphql/types/HashtagPostConnection.types.yaml
+HashtagPostConnection:
+  type: relay-connection
+  config:
+    nodeType: Post!
+```
+
+Explanation :wink: : 
 
 
 
 
-
+ 
