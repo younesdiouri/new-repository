@@ -466,7 +466,7 @@ Alright folks, we finally reached our main topic. We'll see here the main compon
 - Resolvers
 - Mutations
 
-### Overblog : Define your graphQL schema and test it with graphiQL
+### Overblog : Define your graphQL schema
 
 First of all we'll need to install the bundle via composer : 
 
@@ -648,10 +648,12 @@ Query:
         resolve: '@=resolver("App\\GraphQL\\Resolver\\HashtagResolver::resolve", [args["name"]])'
 ```
 
-We can know query Users, Posts and Hashtags.
+We now have documentation for our Users, Posts and Hashtags.
 {: .notice--success}
 
 Last step before testing our queries : the resolvers :smile: !
+
+### Overblog : The resolvers :
 
 First the UserResolver : 
 
@@ -816,6 +818,282 @@ We decode the User ID from our Token (we added the ID to the payload in the JWT 
 Now for the email, we are returning a "hidden" String instead of the real email, if the resource ID is different from the request token ID.
 {: .notice--success}
 
+Post and User are pratically the same : 
+
+ ```php
+ <?php
+
+namespace App\GraphQL\Resolver;
+
+use App\Entity\Post;
+use App\Entity\User;
+use App\Repository\HashtagRepository;
+use App\Repository\PostRepository;
+use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
+use GraphQL\Type\Definition\ResolveInfo;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Overblog\GraphQLBundle\Definition\Argument;
+use Overblog\GraphQLBundle\Definition\Resolver\ResolverInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Overblog\GraphQLBundle\Relay\Connection\Output\Connection;
+use Overblog\GraphQLBundle\Relay\Connection\Paginator;
+
+class PostResolver implements ResolverInterface
+{
+    /** @var string POST_DATE_FORMAT */
+    const POST_DATE_FORMAT = 'Y-m-d H:i:s';
+
+    protected $em;
+    protected $userRepository;
+    protected $jwtManager;
+    protected $tokenStorageInterface;
+    protected $posts;
+    protected $hashtagRepository;
+
+    /**
+     * PostResolver constructor.
+     * @param EntityManagerInterface $em
+     * @param UserRepository $userRepository
+     * @param PostRepository $posts
+     * @param HashtagRepository $hashtagRepository
+     * @param TokenStorageInterface $tokenStorageInterface
+     * @param JWTTokenManagerInterface $jwtManager
+     */
+    public function __construct(
+        EntityManagerInterface $em,
+        UserRepository $userRepository,
+        PostRepository $posts,
+        HashtagRepository $hashtagRepository,
+        TokenStorageInterface $tokenStorageInterface,
+        JWTTokenManagerInterface $jwtManager,
+    ) {
+        $this->em = $em;
+        $this->userRepository = $userRepository;
+        $this->jwtManager = $jwtManager;
+        $this->tokenStorageInterface = $tokenStorageInterface;
+        $this->posts = $posts;
+        $this->hashtagRepository = $hashtagRepository;
+        $this->postCommentRepository = $postCommentRepository;
+    }
+
+    /**
+     * @param ResolveInfo $info
+     * @param $value
+     * @param Argument $args
+     * @return mixed
+     */
+    public function __invoke(ResolveInfo $info, $value, Argument $args)
+    {
+        $method = $info->fieldName;
+        return $this->$method($value, $args);
+    }
+
+    /**
+     * @param string $id
+     * @return null|Post
+     */
+    public function resolve(string $id)
+    {
+        return $this->em->find(Post::class, $id);
+    }
+
+    /**
+     * @param Post $post
+     * @return string
+     */
+    public function postId(Post $post) :string
+    {
+        return $post->getId();
+    }
+
+    /**
+     * @param Post $post
+     * @return string
+     */
+    public function content(Post $post) :string
+    {
+        return $post->getContent();
+    }
+
+    /**
+     * @param Post $post
+     * @return string
+     */
+    public function publishedAt(Post $post) :string
+    {
+        return $post->getPublishedAt()->format(self::POST_DATE_FORMAT);
+    }
+
+    /**
+     * @param Post $post
+     * @return User|null
+     */
+    public function author(Post $post)
+    {
+        return $post->getAuthor();
+    }
+
+    /**
+     * @param Post $post
+     * @return Collection
+     */
+    public function hashtags(Post $post)
+    {
+        return $post->getHashtags();
+    }
+}
+```
+
+You can notice that when we are resolving posts from User, we return a **Connection** (because of the relay Connection from our graphQL types) as for hashtags from a Post, we return a **Collection** which is totally different. 
+{: .notice--primary}
+
+There there, the HashtagResolver : 
+
+```php
+<?php
+
+namespace App\GraphQL\Resolver;
+
+use App\Entity\Hashtag;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
+use GraphQL\Type\Definition\ResolveInfo;
+use Overblog\GraphQLBundle\Definition\Argument;
+use Overblog\GraphQLBundle\Definition\Resolver\ResolverInterface;
+use Overblog\GraphQLBundle\Relay\Connection\Output\Connection;
+use Overblog\GraphQLBundle\Relay\Connection\Paginator;
+
+class HashtagResolver implements ResolverInterface
+{
+    /**
+     * @var EntityManagerInterface $em
+     */
+    protected $em;
+
+    /**
+     * HashtagResolver constructor.
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
+
+    /**
+     * @param ResolveInfo $info
+     * @param $value
+     * @param Argument $args
+     * @return mixed
+     */
+    public function __invoke(ResolveInfo $info, $value, Argument $args)
+    {
+        $method = $info->fieldName;
+        return $this->$method($value, $args);
+    }
+
+    /**
+     * @param string $name
+     * @return object
+     */
+    public function resolve(string $name)
+    {
+        $name = strtolower($name);
+        return $this->em->getRepository(Hashtag::class)->findOneBy(['name' => $name]);
+    }
+
+    /**
+     * @param Hashtag $hashtag
+     * @return string
+     */
+    public function name(Hashtag $hashtag): string
+    {
+        return $hashtag->getName();
+    }
+
+    /**
+     * @param Hashtag $hashtag
+     * @param Argument $args
+     * @return Connection
+     */
+    public function posts(Hashtag $hashtag, Argument $args): Connection
+    {
+        $posts = $hashtag->getPost();
+        $paginator = new Paginator(function ($offset, $limit) use ($posts) {
+            return $posts->slice($offset, $limit ?? 10);
+        });
+
+        return $paginator->auto($args, count($posts));
+    }
+
+    /**
+     * @param Hashtag $hashtag
+     * @return int
+     */
+    public function count(Hashtag $hashtag): int
+    {
+        return count($hashtag->getPost());
+    }
+}
+```
+
+Now that we have our **graphQL types** and our **resolvers** we can start querying some data in GraphiQL.
+You can generate a post, link it with your user and link to this post some hashtags.
 
 
- 
+### GraphiQl : Query your data :
+
+[GraphiQL](https://github.com/graphql/graphiql) is a cool IDE for GraphQL queries and mutations. You have also an "electron" version, for windows. There is othre ones : in PostMan, in PHPStorm, [Altair](https://altair.sirmuel.design/).
+
+Oh I almost forgot : in `config/routes/graphql.yaml` we need to defile a prefix for our graphQL endpoint. By default, the endpoint is localhost. I rather like the localhost/graphql, according to my `security.yaml`. I can secure easily this pattern, and let others open like `register`.
+{: .notice--danger}
+
+```yaml
+#config/routes/graphql.yaml
+overblog_graphql_endpoint:
+    resource: "@OverblogGraphQLBundle/Resources/config/routing/graphql.yml"
+    prefix: graphql
+```
+
+Nice we are FINALLY all set :smile:. On graphiql you can put `localhost:8000/graphql/` (adapt it to your port obviously).
+It should look like this:
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/graphiqlfail.PNG" alt="graphiql error">{% endraw %}
+
+```json
+{"code":401,"message":"JWT Token not found"}
+```
+
+You get it :o ? We didn't put any JWT token to our request, thus the reply is a forbidden access.
+{: .notice--warning}
+
+To add the token, you'll have first to get the Token (Postman > POST localhost:PORT/login (with credentials) > Copy the token). Then you can click on the primary button on the top right side of GraphiQL : "Edit HTTP Headers". 
+Then you add a new Header named Authorization and for the value : Bearer [Token]. 
+There is a space between "Bearer" and the token. Save!
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/graphiqlsuccess.PNG" alt="graphiql success">{% endraw %}
+
+You can access your graphQL documentation thanks to GraphiQL. 
+
+Now for the hashtag query : 
+
+```
+{
+	hashtag(name: "graphql"){
+    count,
+    posts{
+      edges{
+        node{
+          content,
+          publishedAt
+        }
+      }
+    }
+  }  
+}
+```
+
+
+
