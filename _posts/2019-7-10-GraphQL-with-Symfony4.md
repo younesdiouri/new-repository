@@ -584,6 +584,237 @@ HashtagPostConnection:
 
 Explanation :wink: : 
 
+In the UserType, `resolveField: '@=resolver("App\\GraphQL\\Resolver\\UserResolver", [info, value, args])'` : we are defining the file path for our UserResolver (very close to a "Controller" for a basic Symfony App).
+
+      posts:
+        description: "Post collection of the user"
+        type: PostConnection
+        argsBuilder: Relay::ForwardConnection
+        
+To query the UserPosts, we are using a PostConnection. 
+
+> Relay’s support for pagination relies on the GraphQL server exposing connections in a standardized way. 
+
+To use pagination, simplify lazy loading (especially for User Posts !), we are using a graphql connection, thanks to our graphQL server.
+That's why we have the `config/graphql/types/PostConnection.types.yaml` file for our User => Post connection. We can notice that for Post => User, there is no connection because it's not necessary at all.  
+
+      hashtags:
+        description: "Hashtags of this post"
+        type: "[Hashtag]"
+        
+It goes the same for Hashtags. Posts does not contain that many hashtags, so we can use the [Hashtag] type (array of hashtags).
+However, one Hashtag will be related to many posts, thus we used a relay Connection for pagination.
+{: .notice--info}
+
+Alright ! Now that we have all our types, let's not forget the **query** type. 
+As you may know (or not), a graphQL query goes with this syntax :
+```
+query{
+  entity(param: something){
+      attribute1,
+      attribute2,
+      etc.
+  }
+}  
+```
+We did all the job for our entities, now let's edit the `config/graphql/types/Query.types.yaml` :
+
+```yaml
+# config/graphql/types/Query.types.yaml
+Query:
+  type: object
+  config:
+    fields:
+    
+      user:
+        type: User
+        args:
+          username:
+            type: String
+        resolve: '@=resolver("App\\GraphQL\\Resolver\\UserResolver::resolve", [args["username"]])'
+
+      post:
+        type: Post
+        args:
+          id:
+            type: ID
+        resolve: '@=resolver("App\\GraphQL\\Resolver\\PostResolver::resolve", [args["id"]])'
+
+      hashtag:
+        type: Hashtag
+        args:
+          name:
+            type: String
+        resolve: '@=resolver("App\\GraphQL\\Resolver\\HashtagResolver::resolve", [args["name"]])'
+```
+
+We can know query Users, Posts and Hashtags.
+{: .notice--success}
+
+Last step before testing our queries : the resolvers :smile: !
+
+First the UserResolver : 
+
+```php
+<?php
+
+// src/GraphQL/Resolver/UserResolver.php
+
+namespace App\GraphQL\Resolver;
+
+use App\Entity\User;
+use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use GraphQL\Type\Definition\ResolveInfo;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Overblog\GraphQLBundle\Definition\Argument;
+use Overblog\GraphQLBundle\Definition\Resolver\ResolverInterface;
+use Overblog\GraphQLBundle\Relay\Connection\Output\Connection;
+use Overblog\GraphQLBundle\Relay\Connection\Paginator;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+
+class UserResolver implements ResolverInterface
+{
+
+    const HIDDEN_MAIL = 'hidden';
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
+    protected $jwtManager;
+    protected $tokenStorageInterface;
+    protected $userRepository;
+
+    /**
+     * UserResolver constructor.
+     * @param EntityManagerInterface $em
+     * @param TokenStorageInterface $tokenStorageInterface
+     * @param JWTTokenManagerInterface $jwtManager
+     * @param UserRepository $userRepository
+     */
+    public function __construct(
+        EntityManagerInterface $em,
+        TokenStorageInterface $tokenStorageInterface,
+        JWTTokenManagerInterface $jwtManager,
+        UserRepository $userRepository
+    ) {
+        $this->em = $em;
+        $this->jwtManager = $jwtManager;
+        $this->tokenStorageInterface = $tokenStorageInterface;
+        $this->userRepository = $userRepository;
+
+    }
+
+    /**
+     * @param ResolveInfo $info
+     * @param $value
+     * @param Argument $args
+     * @return mixed
+     */
+    public function __invoke(ResolveInfo $info, $value, Argument $args)
+    {
+        $method = $info->fieldName;
+        return $this->$method($value, $args);
+    }
+
+    /**
+     * @param string $username
+     * @return User
+     */
+    public function resolve(string $username)
+    {
+        return $this->em->getRepository(User::class)->loadUserByUsername($username);
+    }
+
+    /**
+     * @param User $user
+     * @return string
+     */
+    public function email(User $user) :string
+    {
+        if(!$this->isUser($user)) return UserResolver::HIDDEN_MAIL;
+        return $user->getEmail();
+    }
+
+    /**
+     * @param User $user
+     * @return string
+     */
+    public function username(User $user) :string
+    {
+        return $user->getUsername();
+    }
+
+    /**
+     * @param User $user
+     * @return string
+     */
+    public function pictureUrl(User $user) :string
+    {
+        return $user->getPictureUrl();
+    }
+
+    /**
+     * @param User $user
+     * @param Argument $args
+     * @return Connection|null
+     */
+    public function posts(User $user, Argument $args)
+    {
+
+        $posts = $user->getPosts();
+        $paginator = new Paginator(function ($offset, $limit) use ($posts) {
+            return $posts->slice( $offset, $limit ?? 10);
+        });
+
+        return $paginator->auto($args, count($posts));
+    }
+
+    /**
+     * Return true if the queried user is the current user.
+     * @param User $user
+     * @return bool
+     */
+    private function isUser(User $user)
+    {
+        $decodedJwtToken = $this->jwtManager->decode($this->tokenStorageInterface->getToken());
+
+        return ($user->getId() == $decodedJwtToken["id"]);
+    }
+}
+```
+
+For each field I've defined in my User graphQL type, I have to create the associated method that will map this with my User Entity. 
+Now I want to secure also my User emails : why?
+
+As my backend behaves like an api, everyone can use their token to hit my graphQL endpoint. 
+{: .notice--danger}
+
+Some basic rules to avoid being hacked easily : 
+- Don't use incremented ID's, but UUID (Ramsey\Uuid\Doctrine\UuidGenerator)
+- hide the sensitive data
+
+In our case, we'll send "hidden" instead of the real email if query other users than ourselves (example : profile pages).
+We used this block : 
+
+    private function isUser(User $user)
+    {
+        $decodedJwtToken = $this->jwtManager->decode($this->tokenStorageInterface->getToken());
+
+        return ($user->getId() == $decodedJwtToken["id"]);
+    }
+    
+We decode the User ID from our Token (we added the ID to the payload in the JWT part), and we compare it to the User ID we want to query. 
+
+    public function email(User $user) :string
+    {
+        if(!$this->isUser($user)) return UserResolver::HIDDEN_MAIL;
+        return $user->getEmail();
+    }
+    
+Now for the email, we are returning a "hidden" String instead of the real email, if the resource ID is different from the request token ID.
+{: .notice--success}
 
 
 
