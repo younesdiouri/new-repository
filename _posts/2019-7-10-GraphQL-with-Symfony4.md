@@ -1077,23 +1077,38 @@ There is a space between "Bearer" and the token. Save!
 
 You can access your graphQL documentation thanks to GraphiQL. 
 
-Now for the hashtag query : 
+Now we want to query a user by his username, with his posts, and the hashtags of his posts.
+
+Thanks to GraphQL we can do it in one query :
 
 ```
 {
-	hashtag(name: "graphql"){
-    count,
+  user(username: "youyouwhat"){
+    email,
     posts{
       edges{
         node{
           content,
-          publishedAt
+          publishedAt,
+          hashtags{
+            name,
+            count
+          }
         }
       }
     }
   }  
 }
+
 ```
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/graphqlquery.PNG" alt="graphql query">{% endraw %}
+
+You can see that for relay connection, we used `edges{node{attributes`, as for simple array (hashtags) we just used the brackets.
+{: .notice--info}
+
+Let's move to the last part of this tutorial : The Mmmmmm-utations !
+
 
 
 
