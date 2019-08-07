@@ -1109,6 +1109,50 @@ You can see that for relay connection, we used `edges{node{attributes`, as for s
 
 Let's move to the last part of this tutorial : The Mmmmmm-utations !
 
+### Mutations in GraphQL Symfony: 
+
+Mutation works exactly like queries :heart: . 
+
+**Remember?** In `config/packages/graphql.yaml` we added in the schema the Mutation value to the mutation key. We have then to specify a `Mutation.yaml` file in our `config/graphql/types` folder.
+{: .notice--primary}
+
+```yaml
+#config/graphql/types/Mutation.yaml
+
+Mutation:
+  type: "object"
+  config:
+    fields:
+      createPost:
+        type: CreatePostPayload!
+        resolve: "@=mutation('createPost', [args['input']['content']])"
+        args:
+          input:
+            type: CreatePostInput!
+```
+
+We are doing the mutation for the Post creation. We are defining the target mutation file (createPostMutation) and returns type `CreatePostPayload` that **has to be defined** in our `Post.types.yaml` file. It goes the same for the input argument `CreatePostInput`. 
+The arguments `args['input']` are the input arguments needed for the Post creation.
 
 
+```yaml
+#config/graphql/types/Post.types.yaml
 
+# ... our Post type
+
+CreatePostInput:
+  type: input-object
+  config:
+    fields:
+      content:
+        type: "String!"
+
+CreatePostPayload:
+  type: object
+  config:
+    fields:
+      content:
+        type: "String!"
+      hashtags:
+        type: "[Hashtag]"
+```
