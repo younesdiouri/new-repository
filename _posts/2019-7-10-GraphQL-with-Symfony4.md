@@ -34,7 +34,7 @@ SF4 is an amazing PHP framework, complying with the PSR-, using the Doctrine ORM
 Now some of you never used a backend Symfony project as an **API**. By API, I mean that the backend is reachable by any of your frontends (mobile, PWA, React etc.) as a remote API.
 Usually, we use TWIG as a front with SF or Encore (<3) for webpack, which is also very nice. Now that our backend is remote, you will have to secure it in a different manner than you did with the PHP SESSID, AKA sessions. We will use for example [Json Web Tokens](https://jwt.io) .
 
-For REST, you may know the fabulous project Api-Platform (with a graphQL extension also). We will use [Overblog](https://github.com/overblog/GraphQLBundle) GraphQL Bundle. It is an amazing project that provides you a very cool graphQL server for Symfony. It uses also the [Webonyx/GraphqlPHP](https://github.com/webonyx/graphql-php), the GraphQL PHP reference today.
+For REST, you may know the fabulous project Api-Platform (with a graphQL extension also). We will use [Overblog](https://github.com/overblog/GraphQLBundle) GraphQL Bundle at version **^0.11.12**. It is an amazing project that provides you a very cool graphQL server for Symfony. It uses also the [Webonyx/GraphqlPHP](https://github.com/webonyx/graphql-php), the GraphQL PHP reference today.
 
 I used it for one big project of mine, and I must say **THANK YOU GUYS** for provinding this Open Source gem <3. 
 
@@ -461,7 +461,7 @@ We'll see (maybe :)) in another topic how to use this JWT token with React (and 
 
 ## 2) GraphQL implementation:
 
-Alright folks, we finally reached our main topic. We'll see here the main components of [Overblog/GraphQL](https://github.com/overblog/GraphQLBundle) : 
+Alright folks, we finally reached our main topic. We'll see here the main components of [Overblog/GraphQL](https://github.com/overblog/GraphQLBundle) at version ^0.11.12: 
 - How to create a graphQL scheme with multiple types
 - Resolvers
 - Mutations
@@ -1248,7 +1248,7 @@ class PostMutation implements MutationInterface, AliasedInterface
 }
 ```
 
-This is a good example of what we can do in a mutation. We are getting the author from the Token "id" key (I am using in this case the repository which is wrong ;) ). We are parsing the content to get the hashtags (we can use a unique constriant key to avoid querying all the hashtags everytime). The published date is set by default in the Post entity. Please note the **Alias** beneath related to our `Mutation.types.ymal`.
+This is a good example of what we can do in a mutation. We are getting the author from the Token "id" key (I am using in this case the repository which is wrong ;) ). We are parsing the content to get the hashtags (we can use a unique constriant key to avoid querying all the hashtags everytime). The published date is set by default in the Post entity. Please note the **Alias** beneath related to our `Mutation.types.yaml`.
 
 ### Mutations with GraphiQL:
 
