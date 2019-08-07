@@ -1131,8 +1131,9 @@ Mutation:
             type: CreatePostInput!
 ```
 
-We are doing the mutation for the Post creation. We are defining the target mutation file (createPostMutation) and returns type `CreatePostPayload` that **has to be defined** in our `Post.types.yaml` file. It goes the same for the input argument `CreatePostInput`. 
-The arguments `args['input']` are the input arguments needed for the Post creation.
+We are doing the mutation for the Post creation. We are defining the target mutation file (PostMutation) which contains an alias.
+Then we have the return type `CreatePostPayload` that **has to be defined** in our `Post.types.yaml` file. It goes the same way for the input argument `CreatePostInput`. 
+The arguments `args['input']` are the input arguments needed for the Post creation (in our case : content).
 
 
 ```yaml
@@ -1156,3 +1157,142 @@ CreatePostPayload:
       hashtags:
         type: "[Hashtag]"
 ```
+
+The `CreatePostInput` takes in parameter one field : Content (of String type). 
+The `CreatePostPayload` is the response content from the graphQL mutation. It will return the content (to be displayed) and the relatives Hashtags :astonished: . Why Hashtags ? Because we'll take them into account in the `PostMutation.php` create method.
+
+> Let's give a look under the hood. 
+
+```php
+<?php
+// src/GraphQL/Mutation/PostMutation.php
+
+namespace App\GraphQL\Mutation;
+
+use App\Entity\Hashtag;
+use App\Entity\Post;
+use App\Repository\HashtagRepository;
+use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Overblog\GraphQLBundle\Definition\Resolver\AliasedInterface;
+use Overblog\GraphQLBundle\Definition\Resolver\MutationInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+
+class PostMutation implements MutationInterface, AliasedInterface
+{
+    protected $em;
+    protected $userRepository;
+    protected $jwtManager;
+    protected $tokenStorageInterface;
+    protected $roomRepository;
+    protected $hashtagRepository;
+
+    /**
+     * PostMutation constructor.
+     * @param EntityManagerInterface $em
+     * @param UserRepository $userRepository
+     * @param HashtagRepository $hashtagRepository
+     * @param TokenStorageInterface $tokenStorageInterface
+     * @param JWTTokenManagerInterface $jwtManager
+     */
+    public function __construct(
+        EntityManagerInterface $em,
+        UserRepository $userRepository,
+        HashtagRepository $hashtagRepository,
+        TokenStorageInterface $tokenStorageInterface,
+        JWTTokenManagerInterface $jwtManager
+    ) {
+        $this->em = $em;
+        $this->userRepository = $userRepository;
+        $this->jwtManager = $jwtManager;
+        $this->tokenStorageInterface = $tokenStorageInterface;
+        $this->hashtagRepository = $hashtagRepository;
+    }
+
+    public function create(string $content, string $room)
+    {
+        $decodedJwtToken = $this->jwtManager->decode($this->tokenStorageInterface->getToken());
+        $user = $this->userRepository->find($decodedJwtToken["id"]);
+        $post = new Post();
+        $post->setContent($content);
+        $hashtagNumber = preg_match_all("/#(\w+)/", $content, $matches);
+        if($hashtagNumber>0) {
+            foreach($matches[1] as $key=>$value){
+                $value = strtolower($value);
+                $hashtag = $this->hashtagRepository->findOneBy(["name" => $value]);
+                if ($hashtag === null) {
+                    $hashtag = new Hashtag();
+                    $hashtag->setName($value);
+                    $this->em->persist($hashtag);
+                }
+                $post->addHashtag($hashtag);
+            }
+        }
+        $post->setAuthor($user);
+        $this->em->persist($post);
+        $this->em->flush();
+
+        return $post;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function getAliases()
+    {
+        return [
+            'create' => 'createPost'
+        ];
+    }
+}
+```
+
+This is a good example of what we can do in a mutation. We are getting the author from the Token "id" key (I am using in this case the repository which is wrong ;) ). We are parsing the content to get the hashtags (we can use a unique constriant key to avoid querying all the hashtags everytime). The published date is set by default in the Post entity. Please note the **Alias** beneath related to our `Mutation.types.ymal`.
+
+### Mutations with GraphiQL:
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/graphiqlMutation.PNG" alt="graphql query">{% endraw %}
+
+There is a bottom panel "Query Variables" for the query variable "CreatePostInput" `$post`. Now let's give it a try!
+
+{% raw %}<img src="https://younesdiouri.github.io/assets/images/graphiqlmutationfail.PNG" alt="graphql query">{% endraw %}
+
+:o There is no hashtags in return? It's perfectly normal, we only specify that we wanted the content ! 
+To get the Hashtags, you'll have to use the following mutation :
+
+```
+mutation createPost($post: CreatePostInput!) {
+ createPost(input: $post) {
+   content,
+  hashtags{
+    name
+  }
+ }
+}
+```
+
+And you'll have in return (an example): 
+
+```
+{
+  "data": {
+    "createPost": {
+      "content": "Hello from #Wuuut !  ",
+      "hashtags": [
+        {
+          "name": "wuuut"
+        }
+      ]
+    }
+  }
+}
+```
+
+Tadaaaa!
+
+I hope this little story helped with the understanding of GraphQL Symfony, the possibilities you can have by having a Symfony 4 API (JWT, security etc.). 
+
+As for me, I used it for an app with a heavy logic and I must say I wasn't dissapointed with the performances. Of course we absolutely need to be careful about the cache, and when it is mandatory to query from the DB (the JWT User is a good example).
+
+Peace.
